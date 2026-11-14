@@ -33,6 +33,10 @@ cd web && npm install && npm run dev   # http://localhost:5173
 
 `VITE_USE_FIXTURE=1` makes the web app read `schema/fixtures/case_study.json` instead of calling the engine.
 
+## Demonstration
+
+`VITE_DEMO_MODE` is on unless it is set to `0`. Clerk stays in the repo but does not load, and the workbook database is an in-memory sample for this page load instead of Base44. Every page shows "Demo: sign-in and the database are disabled for demonstration purposes." Set `VITE_DEMO_MODE=0` and the Base44 secret `DEMO_MODE=0` to restore sign-in and the database.
+
 ## Rules
 
 - No generated prose on screen: numbers, cell refs, quotes, sources, stamps.

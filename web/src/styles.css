@@ -477,6 +477,22 @@ body {
 }
 .signin .wordmark { height: 40px; }
 
+/* demonstration build: a slim bar in the page flow, not over the content */
+.demo-shell { display: flex; flex-direction: column; height: 100%; min-height: 0; }
+.demo-shell-body { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.demo-shell-body > .page { flex: 1; min-height: 0; height: auto; }
+.demo-banner {
+  flex: none;
+  margin: 0;
+  padding: 6px 16px;
+  border-bottom: 1px solid var(--rule);
+  background: var(--chrome);
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.4;
+  text-align: center;
+}
+
 /* ---------- workspace: sheet + timeline ---------- */
 
 :root {

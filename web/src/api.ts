@@ -1,7 +1,9 @@
 import fixture from "../../schema/fixtures/case_study.json";
+import { demoMode } from "./lib/demoMode";
 import type { Constant, ModelSummary, Report } from "./types";
 
-const USE_FIXTURE = import.meta.env.VITE_USE_FIXTURE !== "0";
+// The demonstration build never calls the engine. With the switch off, fixture mode is unchanged.
+const USE_FIXTURE = demoMode || import.meta.env.VITE_USE_FIXTURE !== "0";
 const ENGINE = import.meta.env.VITE_ENGINE_URL ?? "http://localhost:8000";
 
 const sample = fixture as unknown as Report;
@@ -60,6 +62,7 @@ export async function recheck(id: string, file: Blob, filename: string): Promise
 
 /** The .xlsx as it was uploaded. */
 export async function getModelFile(id: string): Promise<ArrayBuffer> {
+  if (demoMode) throw new Error("Demo: the database is disabled");
   const res = await fetch(`${ENGINE}/models/${id}/file`);
   if (!res.ok) throw new Error(`No workbook for model ${id}`);
   return res.arrayBuffer();
@@ -70,6 +73,7 @@ export async function editConstant(
   id: string,
   edit: { cell: string; literal_index?: number; label?: string; role?: Constant["role"] },
 ): Promise<Constant> {
+  if (demoMode) throw new Error("Demo: the database is disabled");
   const res = await fetch(`${ENGINE}/models/${id}/constants`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },

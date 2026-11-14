@@ -1,10 +1,14 @@
 /** Shared workbooks on Base44: who you are, who a workbook is shared with, who has it open and
  *  what they're doing in it.
  *  Sign-in stays with Clerk: every call carries the Clerk session token, and the `workbooks`
- *  function and WorkbookRoom actor (see /base44) check it. */
+ *  function and WorkbookRoom actor (see /base44) check it.
+ *  With the demonstration switch on, demoStore answers instead and this client is never created. */
 import { createClient } from "@base44/sdk";
+import { demoMode, DEMO_USER } from "./demoMode";
+import { demoCall, demoJoin } from "./demoStore";
 
-const base44 = createClient({ appId: import.meta.env.VITE_BASE44_APP_ID ?? "6acaab66ecbcf0974bea29c3" });
+// Creating the client sends a Base44 analytics event, so the demo build must not.
+const base44 = demoMode ? null : createClient({ appId: import.meta.env.VITE_BASE44_APP_ID ?? "6acaab66ecbcf0974bea29c3" });
 
 export type Role = "owner" | "editor" | "viewer";
 export type Me = { email: string; name: string };
@@ -40,9 +44,10 @@ function guest(): Me {
   return me;
 }
 
-export const me = (): Me => clerk?.me ?? guest();
-/** Signed in with Clerk: workbooks live on Base44. Without it (local dev) they stay in this browser. */
-export const signedIn = () => clerk !== null;
+export const me = (): Me => (demoMode ? { email: DEMO_USER.email, name: DEMO_USER.name } : (clerk?.me ?? guest()));
+/** Signed in with Clerk, or the anonymous demonstration visitor: workbooks are shared.
+ *  Without Clerk (local dev, switch off) they stay in this browser. */
+export const signedIn = () => (demoMode ? true : clerk !== null);
 
 /** Who's asking: the Clerk session token. Without Clerk (local dev) there's none, and sharing
  *  answers "Sign in to share". */
@@ -53,8 +58,9 @@ async function credentials(): Promise<{ token?: string }> {
 /* ---------- workbooks and access ---------- */
 
 async function call<T>(action: string, args: Record<string, unknown> = {}): Promise<T> {
+  if (demoMode) return demoCall<T>(action, args);
   try {
-    const res = await base44.functions.invoke("workbooks", { action, ...args, ...(await credentials()) });
+    const res = await base44!.functions.invoke("workbooks", { action, ...args, ...(await credentials()) });
     return res.data as T;
   } catch (e) {
     const err = e as { response?: { data?: { detail?: string } }; message?: string };
@@ -95,7 +101,8 @@ const TAB = Math.random().toString(36).slice(2, 10);
 
 /** Joins a workbook's WorkbookRoom. The room asks who we are on every (re)connect. */
 export function joinPresence(id: string, h: Handlers) {
-  const room = base44.actors.WorkbookRoom(id).connect();
+  if (demoMode) return demoJoin(id, h);
+  const room = base44!.actors.WorkbookRoom(id).connect();
   let here: Here | null = null;
   const sub = room.subscribe((data) => {
     const msg = data as { type: string; people?: Person[]; by?: string; name?: string; detail?: string; from?: string; op?: unknown };

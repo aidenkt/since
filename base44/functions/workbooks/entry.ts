@@ -109,6 +109,17 @@ function toBase64(bytes: Uint8Array): string {
 
 export default async function handler(req: Request): Promise<Response> {
   try {
+    // Same switch as web/src/lib/demoMode.ts. Unset defaults to on for this branch:
+    // refuse before Clerk or the workbook database. Set the DEMO_MODE secret to "0" to restore this function.
+    let demoFlag = "";
+    try {
+      demoFlag = ((await secrets.get("DEMO_MODE")) as string | undefined) ?? "";
+    } catch {
+      demoFlag = "";
+    }
+    if (demoFlag !== "0") {
+      return Response.json({ detail: "Demo: sign-in and the database are disabled for demonstration purposes." }, { status: 503 });
+    }
     const body = await req.json();
     const base44 = createClientFromRequest(req);
     const db = base44.asServiceRole.entities;
